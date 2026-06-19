@@ -1,0 +1,15 @@
+# See https://supabase.com/docs/guides/local-development/cli/config
+# Used by: supabase gen types typescript --local
+
+project_id = "agent-diary"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
