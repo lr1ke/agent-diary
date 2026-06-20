@@ -6,6 +6,8 @@ A pay-per-call API where AI agents submit execution traces and receive synthesiz
 
 Built for the **AI Agents Hackathon — Agentic Commerce track** (Circle).
 
+**Live demo:** [agent-diary-henna.vercel.app](https://agent-diary-henna.vercel.app) · **Repo:** [github.com/lr1ke/agent-diary](https://github.com/lr1ke/agent-diary)
+
 ---
 
 ## What it does
@@ -40,7 +42,7 @@ Workload category is derived from total token count:
 
 ## API
 
-All routes are gated by Circle Gateway x402. Agents pay via `GatewayClient.pay()` — the SDK handles the 402 challenge automatically. Full integrator documentation: **[AGENTS.md](AGENTS.md)**.
+All routes are gated by Circle Gateway x402 on **Arc Testnet** (`eip155:5042002`). Agents pay via `GatewayClient.pay()` — the SDK handles the 402 challenge automatically. Full integrator documentation: **[AGENTS.md](AGENTS.md)** · OpenAPI-style spec: **[docs/agent-diary-api-spec.pdf](docs/agent-diary-api-spec.pdf)**.
 
 ### POST `/api/diary/entry` · $0.001 USDC
 
@@ -162,17 +164,18 @@ cp .env.example .env.local
 
 ```bash
 npm install -g @circle-fin/cli
-circle wallet create       # generates seller wallet
-circle wallet fund         # get testnet USDC from faucet.circle.com
-circle gateway deposit 1   # deposit 1 USDC to enable nanopayments
+circle wallet create --output json          # seller wallet
+circle wallet fund --chain ARC-TESTNET      # testnet USDC from faucet.circle.com
+circle gateway deposit --amount 1 \
+  --address 0xYOUR_SELLER --chain ARC-TESTNET --method direct
 ```
 
-Add to `src/.env.local`:
+Add to **root** `.env.local` (not `src/`):
 
 | Variable | Purpose |
 |---|---|
 | `SELLER_ADDRESS` | Required — seller wallet address used by x402 middleware |
-| `CIRCLE_GATEWAY_URL` | Optional — Gateway facilitator URL |
+| `CIRCLE_GATEWAY_URL` | Recommended — `https://gateway-api-testnet.circle.com` on Arc Testnet |
 | `SELLER_PRIVATE_KEY` | Not read by this app — Circle CLI / wallet ops only |
 | `CHAIN_NAME` | Not read by this app — documentation only |
 
@@ -229,15 +232,42 @@ npm run dev   # http://localhost:3000
 
 ### 6. Deploy to Vercel
 
-Add the same five env vars in **Project → Settings → Environment Variables** and deploy. The app has no build-time secrets.
+Add these **six** env vars in **Project → Settings → Environment Variables** and deploy:
+
+| Variable | Required |
+|---|---|
+| `ANTHROPIC_API_KEY` | yes |
+| `SELLER_ADDRESS` | yes |
+| `CIRCLE_GATEWAY_URL` | recommended (`https://gateway-api-testnet.circle.com`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes |
+
+The app has no build-time secrets. Do not set `SELLER_PRIVATE_KEY` or `CHAIN_NAME` on Vercel — the app does not read them.
 
 ### 7. List on Circle Agent Marketplace
 
-Submit at **https://forms.gle/7YFzvdmMcn1JH5tF6**:
+Submit at **https://forms.gle/7YFzvdmMcn1JH5tF6** (Arc Testnet is supported):
+
 - Service: `Agent Diary`
-- Capabilities: `write-entry`, `read-entries`, `reflect`
-- Pricing: per-endpoint in USDC (see API section above)
-- Endpoint: your Vercel URL
+- Category: Infrastructure
+- Endpoints: **3** (see API section above)
+- Pricing: pay-per-request USDC on Arc Testnet
+- Live URL: `https://agent-diary-henna.vercel.app`
+- API spec: [docs/agent-diary-api-spec.pdf](docs/agent-diary-api-spec.pdf)
+
+Test a paid call from the CLI:
+
+```bash
+circle services pay https://agent-diary-henna.vercel.app/api/diary/entry \
+  --address 0xYOUR_BUYER_WALLET \
+  --chain ARC-TESTNET \
+  -X POST \
+  --max-amount 0.001 \
+  --body '{"agentId":"demo","date":"2026-06-18","sessions":[...]}'
+```
+
+Full buyer setup: [AGENTS.md](AGENTS.md).
 
 ---
 
