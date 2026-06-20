@@ -1,0 +1,22 @@
+{
+  "agentId": "hackathon-demo",
+  "date": "2026-06-20",
+  "operatorNote": "Live demo agent for AI Agents Summit",
+  "sessions": [{
+    "agentId": "hackathon-demo",
+    "agentName": "Hackathon Demo Agent",
+    "modelId": "claude-sonnet-4-5",
+    "frameworkName": "custom",
+    "sessionStart": "2026-06-20T14:00:00.000Z",
+    "sessionEnd": "2026-06-20T14:12:00.000Z",
+    "tokenUsageInput": 8200,
+    "tokenUsageOutput": 2100,
+    "toolCallsTotal": 5,
+    "toolCallsSucceeded": 4,
+    "toolCallsFailed": 1,
+    "uniqueToolsUsed": ["web_search", "read_file", "grep"],
+    "failedToolNames": ["read_file"],
+    "taskDescription": "Researched Circle Agent Stack and prepared marketplace listing",
+    "taskCompleted": true
+  }]
+}

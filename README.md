@@ -269,6 +269,8 @@ circle services pay https://agent-diary-henna.vercel.app/api/diary/entry \
 
 Full buyer setup: [AGENTS.md](AGENTS.md).
 
+**Live demo script:** [docs/demo.md](docs/demo.md) · `./scripts/demo.sh`
+
 ---
 
 ## Development
