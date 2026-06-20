@@ -8,8 +8,8 @@ import type {
 type ExpressMiddleware = ReturnType<GatewayMiddleware['require']>
 
 /**
- * Run Circle's Express middleware inside a Next.js Route Handler.
- * Resolves once the middleware calls next() (payment OK) or writes a response (402, etc.).
+ * Run Circle's x402 middleware inside a Next.js Route Handler.
+ * Circle uses Node http.ServerResponse (statusCode, setHeader, end) — not Express res.json().
  */
 export function runExpressMiddleware(
   middleware: ExpressMiddleware,
@@ -19,17 +19,23 @@ export function runExpressMiddleware(
   return new Promise<NextResponse>((resolve) => {
     const expressReq = {
       method:  req.method,
-      url:     req.url,
+      url:     req.nextUrl.pathname + req.nextUrl.search,
       headers: Object.fromEntries(req.headers.entries()),
-      body:    undefined as unknown,
     } as unknown as PaymentRequest
 
-    let statusCode = 200
     const resHeaders: Record<string, string> = {}
 
     const expressRes = {
+      statusCode: 200,
+      setHeader(name: string, value: string) {
+        resHeaders[name] = value
+      },
+      end(body?: string) {
+        resolve(new NextResponse(body ?? null, { status: expressRes.statusCode, headers: resHeaders }))
+      },
+      // Express-style fallbacks (unused by Circle middleware today)
       status(code: number) {
-        statusCode = code
+        expressRes.statusCode = code
         return expressRes
       },
       set(key: string, value: string) {
@@ -37,13 +43,13 @@ export function runExpressMiddleware(
         return expressRes
       },
       json(body: unknown) {
-        resolve(NextResponse.json(body, { status: statusCode, headers: resHeaders }))
+        if (!resHeaders['Content-Type']) {
+          resHeaders['Content-Type'] = 'application/json'
+        }
+        resolve(NextResponse.json(body, { status: expressRes.statusCode, headers: resHeaders }))
       },
       send(body: string) {
-        resolve(new NextResponse(body, { status: statusCode, headers: resHeaders }))
-      },
-      end() {
-        resolve(new NextResponse(null, { status: statusCode, headers: resHeaders }))
+        resolve(new NextResponse(body, { status: expressRes.statusCode, headers: resHeaders }))
       },
     } as unknown as PaymentResponse
 

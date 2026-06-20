@@ -10,7 +10,7 @@ loadEnvConfig(path.join(__dirname, 'src'))
 patchBrokenNodeLocalStorage()
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@circle-fin/x402-batching'],
+  serverExternalPackages: ['@circle-fin/x402-batching', '@x402/core', '@x402/evm'],
 }
 
 export default nextConfig
