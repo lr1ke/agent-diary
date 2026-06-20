@@ -19,6 +19,52 @@ export async function parseJsonBody<T>(req: Request): Promise<T> {
   }
 }
 
+const VALID_FRAMEWORKS = new Set(['openai', 'anthropic', 'langchain', 'custom'])
+
+function isValidIso(s: unknown): s is string {
+  return typeof s === 'string' && !isNaN(new Date(s).getTime())
+}
+
+function isNonNegativeFinite(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0
+}
+
+function isStringArray(arr: unknown): arr is string[] {
+  return Array.isArray(arr) && arr.every(item => typeof item === 'string')
+}
+
+function parseSessionReport(raw: unknown, index: number): AgentSessionReport {
+  const p = `sessions[${index}]`
+  const s = raw as Record<string, unknown>
+
+  if (!isValidIso(s.sessionStart))
+    throw new ApiError(`${p}.sessionStart must be a valid ISO 8601 date`, 400)
+  if (!isValidIso(s.sessionEnd))
+    throw new ApiError(`${p}.sessionEnd must be a valid ISO 8601 date`, 400)
+  if (new Date(s.sessionEnd as string) < new Date(s.sessionStart as string))
+    throw new ApiError(`${p}.sessionEnd must not be before sessionStart`, 400)
+
+  for (const field of ['tokenUsageInput', 'tokenUsageOutput', 'toolCallsTotal', 'toolCallsSucceeded', 'toolCallsFailed'] as const) {
+    if (!isNonNegativeFinite(s[field]))
+      throw new ApiError(`${p}.${field} must be a non-negative number`, 400)
+  }
+
+  if (!isStringArray(s.uniqueToolsUsed))
+    throw new ApiError(`${p}.uniqueToolsUsed must be a string array`, 400)
+  if (!isStringArray(s.failedToolNames))
+    throw new ApiError(`${p}.failedToolNames must be a string array`, 400)
+
+  if (typeof s.taskDescription !== 'string')
+    throw new ApiError(`${p}.taskDescription must be a string`, 400)
+  if (typeof s.taskCompleted !== 'boolean')
+    throw new ApiError(`${p}.taskCompleted must be a boolean`, 400)
+
+  if (s.frameworkName !== undefined && !VALID_FRAMEWORKS.has(s.frameworkName as string))
+    throw new ApiError(`${p}.frameworkName must be one of ${[...VALID_FRAMEWORKS].join(', ')}`, 400)
+
+  return s as unknown as AgentSessionReport
+}
+
 export function parseAgentDailyInput(body: unknown): AgentDailyInput {
   const input = body as Partial<AgentDailyInput>
   const { agentId, date, sessions, operatorNote } = input
@@ -33,7 +79,7 @@ export function parseAgentDailyInput(body: unknown): AgentDailyInput {
     throw new ApiError('sessions array must not be empty', 400)
   }
 
-  return { agentId, date, sessions, operatorNote }
+  return { agentId, date, sessions: sessions.map(parseSessionReport), operatorNote }
 }
 
 export function parseReflectInput(body: unknown): ReflectInput {

@@ -191,4 +191,88 @@ describe('POST /api/diary/entry', () => {
       },
     })
   })
+
+  it('returns 400 when session has an invalid sessionStart date', async () => {
+    const body = {
+      ...validBody,
+      sessions: [{ ...validBody.sessions[0], sessionStart: 'not-a-date' }],
+    }
+    await testApiHandler({
+      appHandler,
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: JSON.stringify(body) })
+        expect(res.status).toBe(400)
+        const json = await res.json()
+        expect(json.error).toMatch(/sessionStart/)
+      },
+    })
+  })
+
+  it('returns 400 when session has sessionEnd before sessionStart', async () => {
+    const body = {
+      ...validBody,
+      sessions: [{
+        ...validBody.sessions[0],
+        sessionStart: '2020-01-15T09:00:00.000Z',
+        sessionEnd:   '2020-01-15T08:00:00.000Z',
+      }],
+    }
+    await testApiHandler({
+      appHandler,
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: JSON.stringify(body) })
+        expect(res.status).toBe(400)
+        const json = await res.json()
+        expect(json.error).toMatch(/sessionEnd/)
+      },
+    })
+  })
+
+  it('returns 400 when session has a negative token count', async () => {
+    const body = {
+      ...validBody,
+      sessions: [{ ...validBody.sessions[0], tokenUsageInput: -1 }],
+    }
+    await testApiHandler({
+      appHandler,
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: JSON.stringify(body) })
+        expect(res.status).toBe(400)
+        const json = await res.json()
+        expect(json.error).toMatch(/tokenUsageInput/)
+      },
+    })
+  })
+
+  it('returns 400 when session has a non-array uniqueToolsUsed', async () => {
+    const body = {
+      ...validBody,
+      sessions: [{ ...validBody.sessions[0], uniqueToolsUsed: 'web_search' }],
+    }
+    await testApiHandler({
+      appHandler,
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: JSON.stringify(body) })
+        expect(res.status).toBe(400)
+        const json = await res.json()
+        expect(json.error).toMatch(/uniqueToolsUsed/)
+      },
+    })
+  })
+
+  it('returns 400 when session has an invalid frameworkName', async () => {
+    const body = {
+      ...validBody,
+      sessions: [{ ...validBody.sessions[0], frameworkName: 'unknown-framework' }],
+    }
+    await testApiHandler({
+      appHandler,
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: JSON.stringify(body) })
+        expect(res.status).toBe(400)
+        const json = await res.json()
+        expect(json.error).toMatch(/frameworkName/)
+      },
+    })
+  })
 })

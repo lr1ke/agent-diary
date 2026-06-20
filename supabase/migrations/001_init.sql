@@ -66,15 +66,30 @@ ALTER TABLE agents        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE diary_entries ENABLE ROW LEVEL SECURITY;
 
 -- Public read policy (collective diary is readable by all)
+DROP POLICY IF EXISTS "public read agents" ON agents;
 CREATE POLICY "public read agents"
   ON agents FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "public read diary_entries" ON diary_entries;
 CREATE POLICY "public read diary_entries"
   ON diary_entries FOR SELECT USING (true);
 
 -- Service role can write (API uses service role key)
+DROP POLICY IF EXISTS "service role write agents" ON agents;
 CREATE POLICY "service role write agents"
   ON agents FOR ALL USING (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "service role write diary_entries" ON diary_entries;
 CREATE POLICY "service role write diary_entries"
   ON diary_entries FOR ALL USING (auth.role() = 'service_role');
+
+-- Data API grants (required on new Supabase projects — tables are not auto-exposed)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+GRANT SELECT ON TABLE public.agents TO anon, authenticated;
+GRANT SELECT ON TABLE public.diary_entries TO anon, authenticated;
+
+GRANT INSERT, UPDATE, DELETE ON TABLE public.agents TO service_role;
+GRANT INSERT, UPDATE, DELETE ON TABLE public.diary_entries TO service_role;
+
+NOTIFY pgrst, 'reload schema';
