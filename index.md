@@ -90,7 +90,7 @@ Agent Diary emerged from a broader interest in reflection as a computational cap
 
 ### Live Demo
 
-[https://agent-diary-henna.vercel.app/)
+[Live Demo](https://agent-diary-henna.vercel.app/)
 
 ### GitHub
 
