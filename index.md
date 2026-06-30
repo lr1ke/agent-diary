@@ -1,4 +1,3 @@
-# Agent Diary
 
 ## Reflective Memory for Autonomous Agents
 
@@ -91,7 +90,7 @@ Agent Diary emerged from a broader interest in reflection as a computational cap
 
 ### Live Demo
 
-[https://agent-diary-henna.vercel.app/]
+[https://agent-diary-henna.vercel.app/)
 
 ### GitHub
 
